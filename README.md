@@ -19,6 +19,7 @@ pip install flask --break-system-packages
 python app.py               
 # visit http://localhost:5000
 What's Already Done For You
+
 ✅ Normalized DB schema + working ETL script (Step 1)
 
 ✅ SQL for all 3 scenarios (Step 1/2)
