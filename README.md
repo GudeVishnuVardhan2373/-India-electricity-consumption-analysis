@@ -20,9 +20,13 @@ python app.py
 # visit http://localhost:5000
 What's Already Done For You
 ✅ Normalized DB schema + working ETL script (Step 1)
+
 ✅ SQL for all 3 scenarios (Step 1/2)
+
 ✅ Python EDA charts to preview what Tableau should show (Step 2/3)
+
 ✅ Flask app skeleton ready for Tableau embed (Step 7)
+
 ✅ Full documentation draft (Step 8)
 
 
