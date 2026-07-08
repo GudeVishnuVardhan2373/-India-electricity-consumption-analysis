@@ -18,6 +18,7 @@ pip install flask --break-system-packages
 # edit app.py: paste your Tableau Public embed URLs
 python app.py               
 # visit http://localhost:5000
+
 What's Already Done For You
 
 ✅ Normalized DB schema + working ETL script (Step 1)
@@ -32,6 +33,7 @@ What's Already Done For You
 
 
 What You Still Need To Do
+
 Build the actual Tableau dashboard + story (Steps 3–5) — this part has to be done in Tableau Desktop/Public directly, it can't be scripted.
 Performance-test your dashboard/story in Tableau (Step 6).
 Publish to Tableau Public and paste the embed URLs into webapp/app.py (Step 7).
