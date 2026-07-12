@@ -1,16 +1,205 @@
-{% extends "base.html" %}
-{% block content %}
-<div class="card">
-    <h2>Project Overview</h2>
-    <p>
-        This project analyzes state-wise electricity consumption across India from
-        January 2019 to December 5, 2020, covering the COVID-19 nationwide lockdown period.
-        It looks at three scenarios: overall consumption trends, regional variation in demand,
-        and the pace of recovery after lockdown restrictions eased.
-    </p>
-    <p>
-        Use the navigation above to view the interactive <strong>Dashboard</strong> or walk through
-        the <strong>Story</strong>, both published on Tableau Public and embedded here.
-    </p>
-</div>
-{% endblock %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plugging into the Future | India's Electricity Consumption</title>
+    <style>
+        /* Base Dark Theme & Grid Background */
+        :root {
+            --bg-dark: #0f172a;
+            --grid-line: rgba(255, 255, 255, 0.05);
+            --text-main: #94a3b8;
+            --text-light: #f8fafc;
+            --accent-blue: #38bdf8;
+            --accent-orange: #f97316;
+            --panel-bg: rgba(30, 41, 59, 0.5);
+            --panel-border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-image: 
+                linear-gradient(var(--grid-line) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 50px 20px;
+        }
+
+        /* Typography & Headers */
+        .tagline {
+            color: var(--accent-blue);
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .tagline::before {
+            content: "●";
+            color: var(--accent-orange);
+            font-size: 1.2rem;
+        }
+
+        h1 {
+            font-size: 3.8rem;
+            margin: 0 0 20px 0;
+            color: var(--text-light);
+            font-weight: 700;
+        }
+
+        h1 .highlight {
+            color: var(--accent-orange);
+        }
+
+        .description {
+            font-size: 1.15rem;
+            line-height: 1.6;
+            max-width: 800px;
+            margin-bottom: 50px;
+        }
+
+        /* Stats Panel */
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 8px;
+            margin-bottom: 40px;
+            backdrop-filter: blur(10px);
+        }
+
+        .stat-box {
+            padding: 30px;
+            border-right: 1px solid var(--panel-border);
+        }
+
+        .stat-box:last-child {
+            border-right: none;
+        }
+
+        .stat-value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--text-light);
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-main);
+        }
+
+        /* Tableau Embed Container */
+        .viz-container {
+            width: 100%;
+            height: 850px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            border: 1px solid var(--panel-border);
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 25px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--text-main);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 900px) {
+            .stats-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .stat-box:nth-child(2) {
+                border-right: none;
+            }
+            .stat-box:nth-child(1), .stat-box:nth-child(2) {
+                border-bottom: 1px solid var(--panel-border);
+            }
+            h1 {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Header Section -->
+        <div class="tagline">National Grid Load Study · 2019-2020</div>
+        <h1>Plugging into the <span class="highlight">Future</span></h1>
+        <p class="description">
+            India's state-wise electricity consumption, tracked day by day through the pre-pandemic baseline, the nationwide lockdown, and the recovery that followed — drawn live from Python extracts, modeled in data views, and visualized in Tableau.
+        </p>
+
+        <!-- Dynamic Statistics Panel -->
+        <div class="stats-container">
+            <div class="stat-box">
+                <div class="stat-value">{{ stats.total_records }}</div>
+                <div class="stat-label">Records Loaded</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value">{{ stats.total_states }}</div>
+                <div class="stat-label">States & UTs</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value">{{ stats.status }}</div>
+                <div class="stat-label">Coverage</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value">{{ stats.total_load }}</div>
+                <div class="stat-label">Total Load (MU)</div>
+            </div>
+        </div>
+
+        <!-- Tableau Dashboard Iframe -->
+        <div class="viz-container">
+            {% if tableau_url %}
+                <!-- Note: The ?:embed=y parameters are added here automatically to force the iframe to render cleanly -->
+                <iframe src="{{ tableau_url }}?:embed=y&:showVizHome=no&:tabs=no&:toolbar=bottom" title="India Electricity Consumption Viz"></iframe>
+            {% else %}
+                <div style="padding: 50px; text-align: center; color: #000;">
+                    <h2>Visualization Link Missing</h2>
+                    <p>Please add your published Tableau Public URL to the TABLEAU_EMBED_URL variable in your .env file.</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <div>Source: CSV Extract / Local Data</div>
+            <div>Render: Tableau Public | Flask</div>
+        </div>
+    </div>
+
+</body>
+</html>
