@@ -1,92 +1,57 @@
-"""
-app.py
-------
-Flask web layer for "Plugging into the Future: India's Electricity
-Consumption Patterns (2019-2020)".
-
-This reads live from the exported electricity_consumption.csv (rather than
-connecting to MySQL directly) -- MySQL is still where the data lives and
-gets transformed (see sql_scripts/), but the web app itself only needs the
-CSV export, so it has no database dependency at runtime. That means you
-can demo/submit this without MySQL running at all.
-"""
-
 import os
-import csv
-from flask import Flask, render_template
-from dotenv import load_dotenv
+import pandas as pd
+from flask import Flask, render_template, request
 
-load_dotenv()
+# 1. Dynamic Path Resolution (Works perfectly on local and Render)
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+CSV_PATH = os.path.join(BASE_DIR, 'data', 'electricity_consumption.csv')
 
+# 2. Get the Tableau Embed URL from Environment Variables (With a placeholder fallback)
+TABLEAU_EMBED_URL = os.environ.get(
+    'TABLEAU_EMBED_URL', 
+    'https://public.tableau.com/views/YourWorkbookName/YourStory'  # Fallback local link
+)
+
+# 3. Initialize Flask App
 app = Flask(__name__)
 
-CSV_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "electricity_consumption.csv")
+# 4. Safely Load CSV Data
+try:
+    if os.path.exists(CSV_PATH):
+        df = pd.read_csv(CSV_PATH)
+        print("CSV loaded successfully.")
+    else:
+        df = None
+        print(f"[Warning] CSV not found at {CSV_PATH}")
+except Exception as e:
+    df = None
+    print(f"[Warning] Error reading CSV file: {e}")
 
 
-def get_csv_statistics():
-    """Reads electricity_consumption.csv and computes summary stats for
-    the landing page's stat strip."""
-    fallback = {
-        "records": "\u2014",
-        "states": "\u2014",
-        "total_load": "\u2014",
-        "status": "CSV not found",
-    }
-    try:
-        with open(CSV_PATH, mode="r", encoding="utf-8") as file:
-            reader = csv.DictReader(file)
-
-            total_records = 0
-            unique_states = set()
-            total_usage_mu = 0.0
-
-            for row in reader:
-                total_records += 1
-                if row.get("state"):
-                    unique_states.add(row["state"].strip())
-                if row.get("usage_mwh"):
-                    try:
-                        total_usage_mu += float(row["usage_mwh"])
-                    except ValueError:
-                        continue
-
-            if total_records == 0:
-                return fallback
-
-            # NOTE: usage_mwh already holds the source data's Million Units
-            # (MU) figures unconverted (see sql_scripts/schema.sql) -- so
-            # the sum below IS the MU total already. Do not divide by 1000
-            # here; that would be converting an MU figure as if it were a
-            # true MWh figure, which understates the total by 1000x.
-            return {
-                "records": f"{total_records:,}",
-                "states": len(unique_states),
-                "total_load": f"{total_usage_mu:,.2f} MU",
-                "status": "100% CSV Extract Coverage",
-            }
-    except FileNotFoundError:
-        print(f"[warning] CSV not found at {CSV_PATH}")
-        return fallback
-    except Exception as e:
-        print(f"[warning] Error reading CSV file: {e}")
-        return fallback
-
-
-@app.route("/")
+# 5. Application Routes
+@app.route('/', methods=['GET', 'HEAD'])
 def index():
-    raw_stats = get_csv_statistics()
+    if request.method == 'HEAD':
+        return '', 200
+        
+    total_records = len(df) if df is not None else 0
+    
+    # Safely find the state column regardless of capitalization
+    unique_states = 0
+    if df is not None:
+        # Find if 'State', 'state', or 'STATE' exists
+        state_col = next((col for col in df.columns if col.lower() == 'state'), None)
+        if state_col:
+            unique_states = df[state_col].nunique()
+            
+    return render_template(
+        'index.html', 
+        tableau_url=TABLEAU_EMBED_URL,
+        total_records=total_records,
+        unique_states=unique_states
+    )
 
-    stats = {
-        "total_records": raw_stats["records"],
-        "total_states": raw_stats["states"],
-        "total_load": raw_stats["total_load"],
-        "status": raw_stats["status"],
-    }
-
-    tableau_url = os.getenv("TABLEAU_EMBED_URL", "")
-
-    return render_template("index.html", stats=stats, tableau_url=tableau_url)
-
-
-if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+# 6. Run Configuration (Ensures the port dynamically binds on Render)
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
+    app.run(debug=True, host='0.0.0.0', port=port)
